@@ -938,3 +938,8 @@ body {
   vertical-align: -0.5em;
   margin: 0 1px;
 }
+
+/* Kết Ngày players table: the "Tổng" heading in the same green as the amounts under it */
+#endDayResult .settle-table thead .col-total {
+  color: #00ff7f; /* Spring Green */
+}
