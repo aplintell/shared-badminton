@@ -546,6 +546,12 @@
       }
     }
 
+    // Pictures used in the summary heading in place of words. PNG rather than SVG so the
+    // shared image (html2canvas) draws them too.
+    var SHUTTLECOCK_ICON = { src: 'img/icons/shuttlecock.png', className: 'shuttle-icon' };
+    var COURT_ICON = { src: 'img/icons/court.png', className: 'court-icon' };
+    var WATER_ICON = { src: 'img/icons/water-bottle.png', className: 'water-icon' };
+
     function calculateSettlement() {
       var shuttlecockPrice = parseFloat(shuttlecockInput.value) || 0;
       var courtPrice = parseFloat(courtInput.value) || 0;
@@ -557,18 +563,52 @@
           settleSummaryEl.innerHTML = '';
           var lines = [];
 
-          function addSummaryLine(text) {
-            var p = document.createElement('p');
-            p.className = 'settle-line';
-            p.textContent = text;
-            settleSummaryEl.appendChild(p);
-            lines.push(text);
+          // The heading area is a table above the players table: short labels (pictures for
+          // Cầu / Sân / Nước) on top, the amounts underneath. The text version for sharing keeps
+          // the full wording.
+          var summaryTable = document.createElement('table');
+          summaryTable.className = 'settle-table summary-table';
+          var summaryHead = document.createElement('thead');
+          var summaryBody = document.createElement('tbody');
+          var summaryHeadRow = document.createElement('tr');
+          var summaryValueRow = document.createElement('tr');
+          summaryHead.appendChild(summaryHeadRow);
+          summaryBody.appendChild(summaryValueRow);
+          summaryTable.appendChild(summaryHead);
+          summaryTable.appendChild(summaryBody);
+          settleSummaryEl.appendChild(summaryTable);
+
+          // shortLabel is text, or a picture ({ src, className }).
+          function addSummaryColumn(shortLabel, shareLabel, value, shareLine) {
+            var th = document.createElement('th');
+            th.scope = 'col';
+            if (typeof shortLabel === 'object') {
+              var img = document.createElement('img');
+              img.className = shortLabel.className;
+              img.src = shortLabel.src;
+              img.alt = '';
+              th.appendChild(img);
+            } else {
+              th.textContent = shortLabel;
+            }
+            th.setAttribute('aria-label', shareLabel);
+            summaryHeadRow.appendChild(th);
+            var td = document.createElement('td');
+            td.textContent = value;
+            summaryValueRow.appendChild(td);
+            lines.push(shareLine);
           }
 
-          addSummaryLine('Cầu + Sân: ' + formatMoney(shuttlecockPrice + courtPrice) + '💵'
-            + ' --- (' + data.gameCount + ' Set)');
-          addSummaryLine('Nước: ' + formatMoney(waterPrice) + '💵');
-          addSummaryLine('💰/Set: ' + formatMoney(data.costPerSlot) + '💵 --- 💧/Set Thua: ' + formatMoney(data.waterPerLoserSlot) + '💵');
+          function addMoneyColumn(shortLabel, shareLabel, amount) {
+            addSummaryColumn(shortLabel, shareLabel, formatMoney(amount), shareLabel + ' = ' + formatMoney(amount) + ' 💵');
+          }
+
+          addSummaryColumn('Set', 'Số Set', String(data.gameCount), 'Số Set: ' + data.gameCount);
+          addMoneyColumn(SHUTTLECOCK_ICON, 'Cầu', shuttlecockPrice);
+          addMoneyColumn(COURT_ICON, 'Sân', courtPrice);
+          addMoneyColumn(WATER_ICON, 'Nước', waterPrice);
+          addMoneyColumn('💰/Set', '💰/Set', data.costPerSlot);
+          addMoneyColumn('💧/Thua', '💧/Set Thua', data.waterPerLoserSlot);
 
           function addCell(tr, tag, className, text) {
             var cell = document.createElement(tag);

@@ -888,3 +888,53 @@ body {
   border-radius: 10px;
   color: var(--text);
 }
+
+/* Kết Ngày heading area: a table (labels on top, amounts underneath) above the players table */
+#endDayModal .summary-table {
+  margin: 0;
+  font-size: 0.8rem;
+  table-layout: auto;
+}
+
+#endDayModal .summary-table thead th,
+#endDayModal .summary-table tbody td {
+  text-align: center;
+  padding-left: 3px;
+  padding-right: 3px;
+}
+
+#endDayModal .summary-table thead th {
+  text-transform: none;
+  line-height: 1.2;
+  color: var(--text-dim);
+}
+
+#endDayModal .summary-table tbody td {
+  color: var(--text);
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+/* Badminton-court picture used in the Kết Ngày summary heading (sized like the emoji beside it) */
+.court-icon {
+  height: 1.7em;
+  width: auto;
+  vertical-align: -0.55em;
+  margin: 0 2px;
+}
+
+/* Shuttlecock picture used in the Kết Ngày summary heading */
+.shuttle-icon {
+  height: 1.5em;
+  width: auto;
+  vertical-align: -0.45em;
+  margin: 0 1px;
+}
+
+/* Water-bottle picture used in the Kết Ngày summary heading */
+.water-icon {
+  height: 1.6em;
+  width: auto;
+  vertical-align: -0.5em;
+  margin: 0 1px;
+}

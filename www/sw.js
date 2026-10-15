@@ -24,7 +24,10 @@ var FILES = [
   'img/payment-qr.jpg',
   'img/icons/icon-180.png',
   'img/icons/icon-192.png',
-  'img/icons/icon-512.png'
+  'img/icons/icon-512.png',
+  'img/icons/court.png',
+  'img/icons/shuttlecock.png',
+  'img/icons/water-bottle.png'
 ];
 
 self.addEventListener('install', function (event) {
