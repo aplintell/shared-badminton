@@ -1,0 +1,890 @@
+:root {
+  --bg: #0f1115;
+  --surface: #1b1e26;
+  --surface-alt: #242835;
+  --border: #333846;
+  --text: #f4f5f7;
+  --text-dim: #9aa0ac;
+  --accent: #4f8cff;
+  --win: #29c46f;
+  --win-bg: rgba(41, 196, 111, 0.15);
+  --lose: #ff5c5c;
+  --lose-bg: rgba(255, 92, 92, 0.15);
+  --danger: #ff5c5c;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  min-height: 100vh;
+  padding-bottom: 96px;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.topbar h1 {
+  font-size: 1.15rem;
+  margin: 0;
+  flex: 1;
+  overflow-wrap: anywhere;
+}
+
+.back-link {
+  color: var(--text);
+  text-decoration: none;
+  font-size: 1.4rem;
+  line-height: 1;
+  padding: 4px 8px;
+  margin: -4px -8px;
+}
+
+.title-wrap {
+  flex: 1;
+  min-width: 0;
+}
+
+.title-input {
+  width: 100%;
+  font-size: 1.15rem;
+  font-family: inherit;
+  font-weight: inherit;
+  background: var(--surface-alt);
+  color: var(--text);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  padding: 6px 8px;
+  margin: -6px -8px;
+}
+
+.icon-button {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 1.2rem;
+  line-height: 1;
+  padding: 4px 8px;
+  margin: -4px -8px;
+  cursor: pointer;
+}
+
+.icon-button:active {
+  color: var(--text);
+}
+
+.container {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+/* Main day list */
+.day-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.day-row {
+  position: relative;
+  overflow: hidden;
+  border-radius: 14px;
+  touch-action: pan-y;
+}
+
+.day-row-bg {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--danger);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.95rem;
+  border-radius: 14px;
+}
+
+.day-row.swiping .day-card {
+  user-select: none;
+}
+
+.day-card {
+  display: block;
+  position: relative;
+  z-index: 1;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+  text-decoration: none;
+  color: var(--text);
+}
+
+.day-card .day-date {
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.day-card .day-meta {
+  margin-top: 4px;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+
+.empty-state {
+  text-align: center;
+  color: var(--text-dim);
+  padding: 48px 16px;
+}
+
+.primary-button {
+  display: block;
+  width: 100%;
+  padding: 14px;
+  margin-top: 20px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  text-decoration: none;
+}
+
+.primary-button:active {
+  opacity: 0.85;
+}
+
+.secondary-button {
+  display: block;
+  width: 100%;
+  padding: 14px;
+  margin-top: 12px;
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  text-decoration: none;
+}
+
+.secondary-button:active {
+  background-color: var(--surface-alt);
+}
+
+/* Game list (day view) */
+.game-list {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+/* Heading added to the game list only while it's being captured for sharing */
+.share-game-header {
+  padding: 12px 16px;
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--text);
+  background: var(--surface-alt);
+  border-bottom: 1px solid var(--border);
+}
+
+.game-row {
+  position: relative;
+  overflow: hidden;
+  border-bottom: 1px solid var(--border);
+  touch-action: pan-y;
+}
+
+.game-row:last-child {
+  border-bottom: none;
+}
+
+.game-row-bg {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--danger);
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.game-row.swiping .game-row-content {
+  user-select: none;
+}
+
+.game-row-content {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: stretch;
+  position: relative;
+  z-index: 1;
+  background: var(--surface);
+}
+
+.team {
+  position: relative;
+  padding: 8px 12px;
+  font-weight: 600;
+  font-size: 1rem;
+  line-height: 1.2;
+  text-align: center;
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.15s ease;
+  overflow: hidden;
+}
+
+.team.team-left {
+  text-align: right;
+  justify-content: flex-end;
+}
+
+.team.team-right {
+  text-align: left;
+  justify-content: flex-start;
+}
+
+.team .players {
+  display: flex;
+  flex-direction: column;
+}
+
+.vs-label {
+  padding: 8px 10px;
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  font-weight: 700;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.vs-time {
+  font-size: 0.65rem;
+  font-weight: 500;
+  color: var(--text-dim);
+  opacity: 0.75;
+}
+
+.team.winner {
+  background: var(--win-bg);
+  color: var(--win);
+}
+
+.team.loser {
+  background: var(--lose-bg);
+  color: var(--lose);
+}
+
+.team:active {
+  background-color: var(--surface-alt);
+}
+
+/* Chibi-style win/lose rubber stamps */
+.stamp {
+  position: absolute;
+  top: 4px;
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border: 2px solid currentColor;
+  border-radius: 6px;
+  background: var(--surface);
+  transform: rotate(-14deg);
+  display: none;
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 1;
+}
+
+.team-left .stamp {
+  left: 4px;
+}
+
+.team-right .stamp {
+  right: 4px;
+}
+
+.stamp-win {
+  color: var(--win);
+}
+
+.stamp-lose {
+  color: var(--lose);
+}
+
+.team.winner .stamp-win {
+  display: inline-block;
+}
+
+.team.loser .stamp-lose {
+  display: inline-block;
+}
+
+.game-hint {
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  padding: 16px 0 4px;
+}
+
+/* Floating add button */
+.fab {
+  position: fixed;
+  right: 20px;
+  bottom: 24px;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+  z-index: 15;
+}
+
+.fab:active {
+  opacity: 0.85;
+}
+
+.fab[hidden] {
+  display: none;
+}
+
+.fab-plus {
+  position: relative;
+  width: 22px;
+  height: 22px;
+}
+
+.fab-plus::before,
+.fab-plus::after {
+  content: '';
+  position: absolute;
+  background: currentColor;
+  border-radius: 2px;
+}
+
+.fab-plus::before {
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  transform: translateX(-50%);
+}
+
+.fab-plus::after {
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 3px;
+  transform: translateY(-50%);
+}
+
+/* Floating undo button (same look as .fab, mirrored to the left) */
+.fab-undo {
+  left: 20px;
+  right: auto;
+  cursor: pointer;
+}
+
+.fab-undo-icon {
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.fab-undo:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* Floating end-day button (same look as .fab, pinned to the middle) */
+.fab-center {
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%);
+  cursor: pointer;
+}
+
+.fab-center-icon {
+  font-size: 2rem;
+  line-height: 1;
+}
+
+/* Add game form */
+.form-group {
+  margin-bottom: 18px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+}
+
+.form-group input[type="text"] {
+  width: 100%;
+  padding: 14px;
+  font-size: 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+}
+
+.form-group input[type="text"]:focus {
+  outline: 2px solid var(--accent);
+}
+
+.field-error {
+  color: var(--danger);
+  font-size: 0.8rem;
+  margin-top: 4px;
+}
+
+/* Custom player picker (replaces the native <datalist> so suggestion rows can carry edit/delete actions) */
+.player-combo {
+  position: relative;
+}
+
+.player-suggestions {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  max-height: 240px;
+  overflow-y: auto;
+  list-style: none;
+  margin: 0;
+  padding: 4px;
+  z-index: 30;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+}
+
+.player-suggestions[hidden] {
+  display: none;
+}
+
+.player-suggestion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 8px;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  touch-action: pan-y;
+}
+
+.player-suggestion-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  touch-action: pan-y;
+}
+
+.player-suggestion-actions {
+  display: none;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.player-suggestion.show-actions .player-suggestion-actions {
+  display: flex;
+}
+
+.player-action-btn {
+  background: none;
+  border: none;
+  font-size: 1.15rem;
+  line-height: 1;
+  padding: 6px;
+  cursor: pointer;
+  color: var(--text-dim);
+}
+
+.player-action-btn:active {
+  color: var(--text);
+}
+
+.player-suggestion-edit-input {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 10px;
+  font-size: 0.95rem;
+  background: var(--surface);
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  color: var(--text);
+}
+
+.player-suggestion-empty {
+  padding: 10px;
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.team-block {
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 16px;
+}
+
+.team-block h3 {
+  margin: 0 0 12px;
+  font-size: 0.9rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* End Day modal */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 20;
+  display: flex;
+}
+
+.modal-overlay[hidden] {
+  display: none;
+}
+
+/* Loading overlay shown while the share image is being prepared */
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  color: var(--text);
+  font-weight: 700;
+}
+
+.loading-overlay[hidden] {
+  display: none;
+}
+
+.loading-spinner {
+  width: 48px;
+  height: 48px;
+  border: 5px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: loading-spin 0.8s linear infinite;
+}
+
+@keyframes loading-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.modal-card {
+  width: 100%;
+  max-width: 480px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px 20px 0 0;
+  padding: 20px;
+  max-height: 85vh;
+  overflow-y: auto;
+  font-weight: 700;
+}
+
+.modal-card h2 {
+  margin: 0 0 16px;
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+
+#endDayModal .primary-button,
+#endDayModal .secondary-button {
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+#endDayModal .form-group label {
+  color: var(--text);
+  font-size: 0.95rem;
+}
+
+#endDayModal .field-error {
+  font-size: 0.9rem;
+}
+
+.modal-card input[type="number"] {
+  width: 100%;
+  padding: 14px;
+  font-size: 1.1rem;
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+}
+
+.modal-card input[type="number"]:focus {
+  outline: 2px solid var(--accent);
+}
+
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.modal-actions .primary-button,
+.modal-actions .secondary-button {
+  margin-top: 0;
+}
+
+.settle-summary {
+  margin: 0 0 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.settle-line {
+  margin: 0 0 6px;
+  font-size: 0.875rem; /* 14px */
+  color: var(--text);
+}
+
+.settle-line:first-child {
+  font-size: 1.025rem; /* 16.4px */
+  color: var(--text);
+  font-weight: 700;
+}
+
+.settle-line:nth-child(2) {
+  font-size: 1.025rem; /* 16.4px */
+  color: var(--text);
+  font-weight: 700;
+}
+
+/* Per-player settlement table: kept compact enough to fit a phone-width card without
+   horizontal scrolling, since the whole card is screenshotted for sharing. */
+.settle-table {
+  width: 100%;
+  margin: 0 0 8px;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+  table-layout: auto;
+  background: var(--surface-alt);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.settle-table th,
+.settle-table td {
+  padding: 8px 3px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+}
+
+.settle-table th:first-child,
+.settle-table td:first-child {
+  padding-left: 8px;
+}
+
+.settle-table th:last-child,
+.settle-table td:last-child {
+  padding-right: 8px;
+}
+
+.settle-table thead th {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-dim);
+  background: var(--surface);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.settle-table tbody tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.settle-table .col-name {
+  text-align: left;
+  font-weight: 800;
+  word-break: break-word;
+}
+
+.settle-table .col-num {
+  text-align: right;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.settle-table .col-total {
+  color: var(--accent);
+  font-weight: 800;
+}
+
+.court-icon {
+  width: 22px;
+  height: 13px;
+  vertical-align: middle;
+}
+
+/* Body cells are coloured per column; header labels keep their dim colour. */
+.settle-table tbody td:nth-child(2),
+.settle-table tbody td:nth-child(3) {
+  color: #fff44f; /* Lemon */
+}
+
+.settle-table tbody td:nth-child(4),
+.settle-table tbody td:nth-child(5) {
+  color: #00ccff; /* Vivid Sky Blue */
+}
+
+.settle-table tbody td:nth-child(6) {
+  color: #00ff7f; /* Spring Green */
+}
+
+.settle-table tbody tr:last-child th,
+.settle-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* ---- Web version ---- */
+
+/* Installed on an iPhone home screen the page runs under the status bar and home bar
+   (viewport-fit=cover), so keep the header and floating buttons clear of them. */
+body {
+  padding-bottom: calc(96px + env(safe-area-inset-bottom));
+}
+
+.topbar {
+  padding-top: calc(16px + env(safe-area-inset-top));
+  padding-left: calc(16px + env(safe-area-inset-left));
+  padding-right: calc(16px + env(safe-area-inset-right));
+}
+
+.fab {
+  bottom: calc(24px + env(safe-area-inset-bottom));
+}
+
+/* Version number on the home page, for checking a phone is up to date */
+.app-version {
+  margin: 32px 0 0;
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--text-dim);
+}
+
+/* Group login (see cloud.js) */
+.login-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: var(--bg);
+}
+
+.login-overlay[hidden] {
+  display: none;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 400px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px 20px;
+}
+
+.login-card h2 {
+  margin: 0 0 20px;
+  font-size: 1.2rem;
+  text-align: center;
+}
+
+.login-note {
+  margin: -8px 0 16px;
+  color: var(--text-dim);
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.login-card input[type="password"] {
+  width: 100%;
+  padding: 14px;
+  font-size: 1.1rem;
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+}

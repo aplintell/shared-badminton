@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+  <title>Thêm Set</title>
+  <link rel="stylesheet" href="css/style.css">
+  <meta name="theme-color" content="#0f1115">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/png" href="img/icons/icon-192.png">
+  <link rel="apple-touch-icon" href="img/icons/icon-180.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Shared Badminton">
+</head>
+<body>
+  <header class="topbar">
+    <a id="backLink" class="back-link" href="index.html">&#8592;</a>
+    <h1>Thêm Set</h1>
+  </header>
+
+  <main class="container">
+    <form id="newGameForm">
+
+      <p id="globalError" class="field-error" hidden></p>
+
+      <div class="team-block">
+        <h3>Team 1</h3>
+        <div class="form-group">
+          <label for="team1Player1">Lông Thủ 1</label>
+          <div class="player-combo">
+            <input type="text" id="team1Player1" autocomplete="off">
+            <ul class="player-suggestions" id="team1Player1Suggestions" hidden></ul>
+          </div>
+          <div class="field-error" id="team1Player1Error" hidden></div>
+        </div>
+        <div class="form-group">
+          <label for="team1Player2">Lông Thủ 2</label>
+          <div class="player-combo">
+            <input type="text" id="team1Player2" autocomplete="off">
+            <ul class="player-suggestions" id="team1Player2Suggestions" hidden></ul>
+          </div>
+          <div class="field-error" id="team1Player2Error" hidden></div>
+        </div>
+      </div>
+
+      <div class="team-block">
+        <h3>Team 2</h3>
+        <div class="form-group">
+          <label for="team2Player1">Lông Thủ 1</label>
+          <div class="player-combo">
+            <input type="text" id="team2Player1" autocomplete="off">
+            <ul class="player-suggestions" id="team2Player1Suggestions" hidden></ul>
+          </div>
+          <div class="field-error" id="team2Player1Error" hidden></div>
+        </div>
+        <div class="form-group">
+          <label for="team2Player2">Lông Thủ 2</label>
+          <div class="player-combo">
+            <input type="text" id="team2Player2" autocomplete="off">
+            <ul class="player-suggestions" id="team2Player2Suggestions" hidden></ul>
+          </div>
+          <div class="field-error" id="team2Player2Error" hidden></div>
+        </div>
+      </div>
+
+      <button type="submit" class="primary-button">Thêm Set</button>
+    </form>
+  </main>
+
+  <script src="js/version.js"></script>
+  <script src="js/pwa.js"></script>
+  <script src="js/vendor/firebase-app-compat.js"></script>
+  <script src="js/vendor/firebase-auth-compat.js"></script>
+  <script src="js/vendor/firebase-firestore-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
+  <script src="js/cloud.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/services.js"></script>
+  <script src="js/back-button.js"></script>
+  <script>
+    var dayId = parseInt(new URLSearchParams(window.location.search).get('dayId'), 10);
+    document.getElementById('backLink').setAttribute('href', 'day.html?id=' + dayId);
+
+    var form = document.getElementById('newGameForm');
+    var globalError = document.getElementById('globalError');
+    var fieldIds = ['team1Player1', 'team1Player2', 'team2Player1', 'team2Player2'];
+    var LONG_PRESS_MS = 500;
+
+    var allPlayers = [];
+    var playerIdsWithGames = {};
+    var hideTimers = {};
+
+    function refreshPlayers() {
+      return Promise.all([Players.findAll(), Players.idsWithGames()]).then(function (results) {
+        allPlayers = results[0];
+        playerIdsWithGames = results[1];
+      });
+    }
+
+    function closeOtherSuggestions(exceptFieldId) {
+      fieldIds.forEach(function (id) {
+        if (id !== exceptFieldId) {
+          document.getElementById(id + 'Suggestions').hidden = true;
+        }
+      });
+    }
+
+    function renderSuggestions(fieldId) {
+      var input = document.getElementById(fieldId);
+      var list = document.getElementById(fieldId + 'Suggestions');
+      var query = input.value.trim().toLowerCase();
+      var matches = allPlayers.filter(function (p) {
+        return !query || p.name.toLowerCase().indexOf(query) !== -1;
+      });
+
+      list.innerHTML = '';
+      if (matches.length === 0) {
+        var empty = document.createElement('li');
+        empty.className = 'player-suggestion-empty';
+        empty.textContent = 'Chưa có Lông Thủ nào';
+        list.appendChild(empty);
+      } else {
+        matches.forEach(function (player) {
+          list.appendChild(buildSuggestionRow(fieldId, player));
+        });
+      }
+      list.hidden = false;
+    }
+
+    function selectPlayer(fieldId, name) {
+      document.getElementById(fieldId).value = name;
+      document.getElementById(fieldId + 'Suggestions').hidden = true;
+    }
+
+    function buildSuggestionRow(fieldId, player) {
+      var li = document.createElement('li');
+      li.className = 'player-suggestion';
+      li.setAttribute('data-player-id', String(player.id));
+
+      var nameSpan = document.createElement('span');
+      nameSpan.className = 'player-suggestion-name';
+      nameSpan.textContent = player.name;
+      nameSpan.addEventListener('click', function () {
+        clearTimeout(hideTimers[fieldId]);
+        selectPlayer(fieldId, player.name);
+      });
+
+      var actions = document.createElement('span');
+      actions.className = 'player-suggestion-actions';
+
+      var editBtn = document.createElement('button');
+      editBtn.type = 'button';
+      editBtn.className = 'player-action-btn';
+      editBtn.setAttribute('aria-label', 'Sửa tên');
+      editBtn.textContent = '✏️';
+      editBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        clearTimeout(hideTimers[fieldId]);
+        startEditPlayer(fieldId, li, nameSpan, player);
+      });
+      actions.appendChild(editBtn);
+
+      if (!playerIdsWithGames[player.id]) {
+        var deleteBtn = document.createElement('button');
+        deleteBtn.type = 'button';
+        deleteBtn.className = 'player-action-btn';
+        deleteBtn.setAttribute('aria-label', 'Xóa');
+        deleteBtn.textContent = '🗑️';
+        deleteBtn.addEventListener('click', function (e) {
+          e.stopPropagation();
+          clearTimeout(hideTimers[fieldId]);
+          deletePlayer(fieldId, player);
+        });
+        actions.appendChild(deleteBtn);
+      }
+
+      li.appendChild(nameSpan);
+      li.appendChild(actions);
+
+      bindLongPress(li);
+      return li;
+    }
+
+    function bindLongPress(li) {
+      var timer = null;
+      var startX = 0;
+      var startY = 0;
+
+      // Stops Android's own long-press (text selection / context menu) from taking over
+      // the gesture before our timer below gets a chance to fire.
+      li.addEventListener('contextmenu', function (e) {
+        e.preventDefault();
+      });
+
+      li.addEventListener('pointerdown', function (e) {
+        startX = e.clientX;
+        startY = e.clientY;
+        timer = setTimeout(function () {
+          document.querySelectorAll('.player-suggestion.show-actions').forEach(function (el) {
+            if (el !== li) {
+              el.classList.remove('show-actions');
+            }
+          });
+          li.classList.add('show-actions');
+          timer = null;
+        }, LONG_PRESS_MS);
+      });
+
+      function cancelTimer(e) {
+        if (timer && e && e.type === 'pointermove') {
+          var dx = e.clientX - startX;
+          var dy = e.clientY - startY;
+          if (Math.abs(dx) < 10 && Math.abs(dy) < 10) {
+            return;
+          }
+        }
+        if (timer) {
+          clearTimeout(timer);
+          timer = null;
+        }
+      }
+
+      li.addEventListener('pointerup', cancelTimer);
+      li.addEventListener('pointercancel', cancelTimer);
+      li.addEventListener('pointermove', cancelTimer);
+      li.addEventListener('pointerleave', cancelTimer);
+    }
+
+    function clearFieldsMatching(name) {
+      var lower = name.toLowerCase();
+      fieldIds.forEach(function (id) {
+        var input = document.getElementById(id);
+        if (input.value.trim().toLowerCase() === lower) {
+          input.value = '';
+        }
+      });
+    }
+
+    function updateFieldsMatching(oldName, newName) {
+      var lower = oldName.toLowerCase();
+      fieldIds.forEach(function (id) {
+        var input = document.getElementById(id);
+        if (input.value.trim().toLowerCase() === lower) {
+          input.value = newName;
+        }
+      });
+    }
+
+    function deletePlayer(fieldId, player) {
+      if (!window.confirm('Xóa Lông Thủ "' + player.name + '"?')) {
+        return;
+      }
+      Players.remove(player.id)
+        .then(function () {
+          clearFieldsMatching(player.name);
+          return refreshPlayers();
+        })
+        .then(function () {
+          renderSuggestions(fieldId);
+        })
+        .catch(function (err) {
+          alert(err.message || 'Could not delete this player.');
+        });
+    }
+
+    function startEditPlayer(fieldId, li, nameSpan, player) {
+      var input = document.createElement('input');
+      input.type = 'text';
+      input.className = 'player-suggestion-edit-input';
+      input.value = player.name;
+      li.replaceChild(input, nameSpan);
+      input.focus();
+      input.select();
+
+      var settled = false;
+
+      function restoreNameSpan() {
+        if (li.contains(input)) {
+          li.replaceChild(nameSpan, input);
+        }
+      }
+
+      function commit() {
+        if (settled) {
+          return;
+        }
+        var newName = input.value.trim();
+        if (!newName || newName === player.name) {
+          settled = true;
+          restoreNameSpan();
+          return;
+        }
+        settled = true;
+        Players.rename(player.id, newName)
+          .then(function (updated) {
+            updateFieldsMatching(player.name, updated.name);
+            return refreshPlayers();
+          })
+          .then(function () {
+            renderSuggestions(fieldId);
+          })
+          .catch(function (err) {
+            alert(err.message || 'Could not rename this player.');
+            restoreNameSpan();
+          });
+      }
+
+      input.addEventListener('blur', function () {
+        setTimeout(commit, 100);
+      });
+      input.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') {
+          input.blur();
+        } else if (e.key === 'Escape') {
+          settled = true;
+          restoreNameSpan();
+        }
+      });
+    }
+
+    var listInteracting = {};
+
+    fieldIds.forEach(function (fieldId) {
+      var input = document.getElementById(fieldId);
+      var list = document.getElementById(fieldId + 'Suggestions');
+
+      input.addEventListener('focus', function () {
+        clearTimeout(hideTimers[fieldId]);
+        closeOtherSuggestions(fieldId);
+        renderSuggestions(fieldId);
+      });
+      input.addEventListener('input', function () {
+        renderSuggestions(fieldId);
+      });
+      input.addEventListener('blur', function () {
+        if (listInteracting[fieldId]) {
+          return;
+        }
+        hideTimers[fieldId] = setTimeout(function () {
+          list.hidden = true;
+        }, 150);
+      });
+      // While a touch is down anywhere in the list, ignore blur entirely — Android's own
+      // long-press-to-select gesture on the name text fires a spurious blur on the input
+      // partway through a hold (independent of the actual selection, which is disabled via
+      // user-select/touch-action), and that would otherwise close the list mid-hold.
+      list.addEventListener('pointerdown', function () {
+        listInteracting[fieldId] = true;
+        clearTimeout(hideTimers[fieldId]);
+      }, true);
+      list.addEventListener('pointerup', function () {
+        listInteracting[fieldId] = false;
+      }, true);
+      list.addEventListener('pointercancel', function () {
+        listInteracting[fieldId] = false;
+      }, true);
+    });
+
+    document.addEventListener('click', function (e) {
+      if (!e.target.closest('.player-combo')) {
+        document.querySelectorAll('.player-suggestion.show-actions').forEach(function (el) {
+          el.classList.remove('show-actions');
+        });
+      }
+    });
+
+    refreshPlayers();
+
+    function clearErrors() {
+      globalError.hidden = true;
+      fieldIds.forEach(function (id) {
+        var errEl = document.getElementById(id + 'Error');
+        errEl.hidden = true;
+        errEl.textContent = '';
+      });
+    }
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      clearErrors();
+
+      var values = {};
+      var hasBlank = false;
+      fieldIds.forEach(function (id) {
+        var raw = document.getElementById(id).value.trim();
+        values[id] = raw;
+        if (!raw) {
+          var errEl = document.getElementById(id + 'Error');
+          errEl.textContent = 'Enter a player name';
+          errEl.hidden = false;
+          hasBlank = true;
+        }
+      });
+      if (hasBlank) {
+        return;
+      }
+
+      Games.addGame(dayId, values.team1Player1, values.team1Player2, values.team2Player1, values.team2Player2)
+        .then(function () {
+          window.location.href = 'day.html?id=' + dayId;
+        })
+        .catch(function (err) {
+          globalError.textContent = err.message;
+          globalError.hidden = false;
+        });
+    });
+  </script>
+</body>
+</html>

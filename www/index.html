@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+  <title>Shared Badminton</title>
+  <link rel="stylesheet" href="css/style.css">
+  <meta name="theme-color" content="#0f1115">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/png" href="img/icons/icon-192.png">
+  <link rel="apple-touch-icon" href="img/icons/icon-180.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Shared Badminton">
+</head>
+<body>
+  <header class="topbar">
+    <h1>Shared Badminton</h1>
+  </header>
+
+  <main class="container">
+    <div id="emptyState" class="empty-state" hidden>
+      <p>Chưa có Kèo</p>
+    </div>
+
+    <div id="dayList" class="day-list" hidden></div>
+
+    <p id="appVersion" class="app-version"></p>
+  </main>
+
+  <form id="newDayForm">
+    <button type="submit" class="fab" aria-label="Lên Kèo Mới"><span class="fab-plus" aria-hidden="true"></span></button>
+  </form>
+
+  <script src="js/version.js"></script>
+  <script src="js/pwa.js"></script>
+  <script src="js/vendor/firebase-app-compat.js"></script>
+  <script src="js/vendor/firebase-auth-compat.js"></script>
+  <script src="js/vendor/firebase-firestore-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
+  <script src="js/cloud.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/services.js"></script>
+  <script src="js/back-button.js"></script>
+  <script>
+    var emptyStateEl = document.getElementById('emptyState');
+    var dayListEl = document.getElementById('dayList');
+    var newDayForm = document.getElementById('newDayForm');
+
+    var MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+    function formatDateMeta(isoDate) {
+      var parts = isoDate.split('-');
+      var d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+      var dd = d.getDate() < 10 ? '0' + d.getDate() : String(d.getDate());
+      return dd + ' ' + MONTH_NAMES[d.getMonth()] + ' ' + d.getFullYear();
+    }
+
+    function loadDays() {
+      GameDays.findLatest(GameDays.MAX_RETAINED_DAYS).then(function (days) {
+        return Promise.all(days.map(function (day) {
+          return Games.findAllForDay(day.id).then(function (games) {
+            return { day: day, gameCount: games.length };
+          });
+        }));
+      }).then(function (summaries) {
+        dayListEl.innerHTML = '';
+        if (summaries.length === 0) {
+          emptyStateEl.hidden = false;
+          dayListEl.hidden = true;
+          return;
+        }
+        emptyStateEl.hidden = true;
+        dayListEl.hidden = false;
+        summaries.forEach(function (s) {
+          var row = buildDayRow(s.day, s.gameCount);
+          dayListEl.appendChild(row);
+          bindDaySwipe(row);
+        });
+      });
+    }
+
+    function buildDayRow(day, gameCount) {
+      var row = document.createElement('div');
+      row.className = 'day-row';
+      row.setAttribute('data-day-id', String(day.id));
+
+      var bg = document.createElement('div');
+      bg.className = 'day-row-bg';
+      bg.setAttribute('aria-hidden', 'true');
+      bg.textContent = '🗑️ Xóa';
+      row.appendChild(bg);
+
+      var a = document.createElement('a');
+      a.className = 'day-card';
+      a.href = 'day.html?id=' + day.id;
+
+      var dateEl = document.createElement('div');
+      dateEl.className = 'day-date';
+      dateEl.textContent = day.name;
+
+      var metaEl = document.createElement('div');
+      metaEl.className = 'day-meta';
+      metaEl.textContent = formatDateMeta(day.date) + ' • ' + gameCount + ' Set';
+
+      a.appendChild(dateEl);
+      a.appendChild(metaEl);
+      row.appendChild(a);
+
+      return row;
+    }
+
+    function bindDaySwipe(row) {
+      var card = row.querySelector('.day-card');
+      var DELETE_THRESHOLD = 90;
+      var pointerId = null;
+      var startX = 0;
+      var startY = 0;
+      var currentX = 0;
+      var dragging = false;
+      var moved = false;
+
+      row.addEventListener('pointerdown', function (e) {
+        if (e.pointerType === 'mouse' && e.button !== 0) {
+          return;
+        }
+        dragging = true;
+        moved = false;
+        currentX = 0;
+        startX = e.clientX;
+        startY = e.clientY;
+        pointerId = e.pointerId;
+        card.style.transition = 'none';
+      });
+
+      row.addEventListener('pointermove', function (e) {
+        if (!dragging || e.pointerId !== pointerId) {
+          return;
+        }
+        var dx = e.clientX - startX;
+        var dy = e.clientY - startY;
+        if (!moved) {
+          if (Math.abs(dx) < 10) {
+            return;
+          }
+          if (Math.abs(dy) > Math.abs(dx)) {
+            dragging = false;
+            return;
+          }
+          moved = true;
+          try {
+            row.setPointerCapture(pointerId);
+          } catch (err) {
+            // ignore if pointer capture isn't supported for this pointer
+          }
+        }
+        currentX = dx;
+        card.style.transform = 'translateX(' + currentX + 'px)';
+        row.classList.toggle('swiping', Math.abs(currentX) > 10);
+      });
+
+      function endDrag() {
+        if (!dragging) {
+          return;
+        }
+        dragging = false;
+        card.style.transition = '';
+        if (moved) {
+          row.dataset.justDragged = '1';
+        }
+        if (Math.abs(currentX) > DELETE_THRESHOLD) {
+          confirmAndDelete(currentX > 0 ? 1 : -1);
+        } else {
+          card.style.transform = '';
+          row.classList.remove('swiping');
+        }
+        currentX = 0;
+      }
+
+      row.addEventListener('pointerup', endDrag);
+      row.addEventListener('pointercancel', endDrag);
+
+      row.addEventListener('click', function (e) {
+        if (row.dataset.justDragged) {
+          e.stopPropagation();
+          e.preventDefault();
+          delete row.dataset.justDragged;
+        }
+      }, true);
+
+      function confirmAndDelete(direction) {
+        var dayId = parseInt(row.getAttribute('data-day-id'), 10);
+        var dayName = card.querySelector('.day-date').textContent;
+        if (!window.confirm('Xóa "' + dayName + '"? Toàn bộ Set trong ngày này sẽ bị xóa vĩnh viễn.')) {
+          card.style.transform = '';
+          row.classList.remove('swiping');
+          return;
+        }
+        card.style.transition = 'transform 0.2s ease';
+        card.style.transform = 'translateX(' + (direction > 0 ? '100%' : '-100%') + ')';
+
+        GameDays.remove(dayId)
+          .then(function () {
+            setTimeout(function () {
+              row.remove();
+              if (!dayListEl.querySelector('.day-row')) {
+                emptyStateEl.hidden = false;
+                dayListEl.hidden = true;
+              }
+            }, 200);
+          })
+          .catch(function () {
+            alert('Could not delete this session. Check your connection and try again.');
+            card.style.transform = '';
+            row.classList.remove('swiping');
+          });
+      }
+    }
+
+    newDayForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+      GameDays.createForToday().then(function (day) {
+        window.location.href = 'day.html?id=' + day.id;
+      });
+    });
+
+    loadDays();
+  </script>
+</body>
+</html>
