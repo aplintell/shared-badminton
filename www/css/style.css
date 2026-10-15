@@ -790,8 +790,8 @@ body {
 }
 
 .court-icon {
-  width: 22px;
-  height: 13px;
+  width: 30px;
+  height: 17.5px;
   vertical-align: middle;
 }
 
@@ -916,7 +916,7 @@ body {
 }
 
 /* Badminton-court picture used in the Kết Ngày summary heading (sized like the emoji beside it) */
-.court-icon {
+.summary-court-icon {
   height: 1.7em;
   width: auto;
   vertical-align: -0.55em;

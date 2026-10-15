@@ -91,7 +91,7 @@
               </th>
               <th scope="col" class="col-num">Thua</th>
               <th scope="col" class="col-num">💧</th>
-              <th scope="col" class="col-num col-total">💵</th>
+              <th scope="col" class="col-num col-total">Tổng</th>
             </tr>
           </thead>
           <tbody></tbody>
@@ -549,7 +549,7 @@
     // Pictures used in the summary heading in place of words. PNG rather than SVG so the
     // shared image (html2canvas) draws them too.
     var SHUTTLECOCK_ICON = { src: 'img/icons/shuttlecock.png', className: 'shuttle-icon' };
-    var COURT_ICON = { src: 'img/icons/court.png', className: 'court-icon' };
+    var COURT_ICON = { src: 'img/icons/court.png', className: 'summary-court-icon' };
     var WATER_ICON = { src: 'img/icons/water-bottle.png', className: 'water-icon' };
 
     function calculateSettlement() {
@@ -603,7 +603,6 @@
             addSummaryColumn(shortLabel, shareLabel, formatMoney(amount), shareLabel + ' = ' + formatMoney(amount) + ' 💵');
           }
 
-          addSummaryColumn('Set', 'Số Set', String(data.gameCount), 'Số Set: ' + data.gameCount);
           addMoneyColumn(SHUTTLECOCK_ICON, 'Cầu', shuttlecockPrice);
           addMoneyColumn(COURT_ICON, 'Sân', courtPrice);
           addMoneyColumn(WATER_ICON, 'Nước', waterPrice);
